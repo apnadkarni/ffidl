@@ -354,8 +354,8 @@ $(fflibs): %: %/Makefile
 	$(MAKE) $(fflib_make_args) -C $* 
 $(fflibs:%=%/Makefile): %/Makefile:
 	mkdir -p $* && cd $* && \
-	`cd .. && cd $(srcdir) && pwd`/lib-src/$*/configure \
-	    --disable-shared --with-pic
+	`cd .. && cd $(srcdir) && pwd`/$*/configure \
+	    --disable-shared --with-pic --disable-builddir
 ffcall: fflib_make_args=-j1
 .PHONY: $(fflibs)
 

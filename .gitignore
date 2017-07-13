@@ -1,0 +1,6 @@
+GNUmakefile
+config.*
+*.o
+*.so
+ffidlConfig.h
+pkgIndex.tcl
