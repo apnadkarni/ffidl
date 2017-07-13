@@ -8,7 +8,7 @@
  *
  * Ffidl - Copyright (c) 1999 by Roger E Critchlow Jr,
  * Santa Fe, NM, USA, rec@elf.org
- * 
+ *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the ``Software''), to deal in the Software without
@@ -16,10 +16,10 @@
  * modify, merge, publish, distribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -62,16 +62,9 @@
 #include <tclInt.h>
 #include <tclPort.h>
 
-#ifdef LOOKUP_TK_STUBS
-static const char *MyTkInitStubs(Tcl_Interp *interp, char *version, int exact);
-static void *tkStubsPtr, *tkPlatStubsPtr, *tkIntStubsPtr, *tkIntPlatStubsPtr, *tkIntXlibStubsPtr;
-#else
-#define tkStubsPtr NULL
-#define tkPlatStubsPtr NULL
-#define tkIntStubsPtr NULL
-#define tkIntPlatStubsPtr NULL
-#define tkIntXlibStubsPtr NULL
-#endif
+static void *tkStubsPtr = NULL, *tkPlatStubsPtr = NULL, *tkIntStubsPtr = NULL, *tkIntPlatStubsPtr = NULL, *tkIntXlibStubsPtr = NULL;
+static const char *MyTkInitStubs(Tcl_Interp *, char *, int);
+
 
 /*
  * Windows needs to know which symbols to export.  Unix does not.
@@ -93,6 +86,12 @@ static void *tkStubsPtr, *tkPlatStubsPtr, *tkIntStubsPtr, *tkIntPlatStubsPtr, *t
  */
 
 #if defined USE_LIBFFI
+
+/* If building with MSVC, include the ffidlConfig.h directly */
+#if defined _MSC_VER
+#include <ffidlConfig.h>
+#endif
+
 
 /* workaround for ffi.h bug on certain platforms: */
 #include <stddef.h>
@@ -205,7 +204,7 @@ static void *tkStubsPtr, *tkPlatStubsPtr, *tkIntStubsPtr, *tkIntPlatStubsPtr, *t
 #define av_start_slong	av_start_long
 #define av_start_slonglong	av_start_longlong
 #define av_start_sshort	av_start_short
- 
+
 /* NB, abbreviated to the most usual, add cases as required */
 #if SIZEOF_CHAR == 1
 #define lib_type_uint8	lib_type_uchar
@@ -298,7 +297,7 @@ static void *tkStubsPtr, *tkPlatStubsPtr, *tkIntStubsPtr, *tkIntPlatStubsPtr, *t
 
 #if !defined(USE_TCL_DLOPEN) && !defined(USE_TCL_LOADFILE)
 /*****************************************
- *				  
+ *
  * ffidlopen, ffidlsym, and ffidlclose abstractions
  * of dlopen(), dlsym(), and dlclose().
  */
@@ -375,7 +374,7 @@ static void ffidlclose(void *handle, const char **error)
 #endif /* USE_TCL_DLOPEN */
 
 /*****************************************
- *				  
+ *
  * Functions exported from this file.
  */
 EXTERN void *   ffidl_pointer_pun _ANSI_ARGS_((void *p));
@@ -1225,12 +1224,20 @@ static int cif_protocol(Tcl_Interp *interp, Tcl_Obj *obj, int *protocolp, char *
   *protocolnamep = NULL;
   if (obj != NULL) {
     *protocolnamep = Tcl_GetString(obj);
-#ifdef __WIN32__
+#ifdef X86_WIN32
     if (strcmp(*protocolnamep, "cdecl") == 0) {
       *protocolp = FFI_SYSV;
     } else if (strcmp(*protocolnamep, "stdcall") == 0) {
       *protocolp = FFI_STDCALL;
     } else {
+      Tcl_AppendResult(interp, "unknown protocol \"", *protocolnamep,
+		       "\", must be cdecl or stdcall",
+		       NULL);
+      return TCL_ERROR;
+    }
+#elif defined(X86_WIN64)
+    *protocolp = FFI_WIN64;
+    if (!(strcmp(*protocolnamep, "cdecl") == 0 || strcmp(*protocolnamep, "stdcall") == 0)) {
       Tcl_AppendResult(interp, "unknown protocol \"", *protocolnamep,
 		       "\", must be cdecl or stdcall",
 		       NULL);
@@ -1244,7 +1251,7 @@ static int cif_protocol(Tcl_Interp *interp, Tcl_Obj *obj, int *protocolp, char *
 #if USE_FFCALL
   *protocolp = 0;
   *protocolnamep = NULL;
-#endif    
+#endif
   return TCL_OK;
 }
 /*
@@ -1280,7 +1287,7 @@ static int cif_parse(Tcl_Interp *interp, ffidl_client *client, Tcl_Obj *args, Tc
   if (cif == NULL) {
     cif = cif_alloc(client, argc);
     if (cif == NULL) {
-      Tcl_AppendResult(interp, "couldn't allocate the ffidl_cif", NULL); 
+      Tcl_AppendResult(interp, "couldn't allocate the ffidl_cif", NULL);
       Tcl_DStringFree(&signature);
       return TCL_ERROR;
     }
@@ -1348,7 +1355,7 @@ static void callout_delete(ClientData clientData)
   }
 }
 /* make a call */
-/* consider what happens if we reenter using the same cif */  
+/* consider what happens if we reenter using the same cif */
 static void callout_call(ffidl_callout *callout)
 {
   ffidl_cif *cif = callout->cif;
@@ -1484,7 +1491,7 @@ static void callout_call(ffidl_callout *callout)
 static void lib_define(ffidl_client *client, char *lname, void *handle, void* unload)
 {
   void** libentry = (void**)Tcl_Alloc(2*sizeof(void*));
-  libentry[0] = handle; libentry[1] = unload; 
+  libentry[0] = handle; libentry[1] = unload;
   entry_define(&client->libs,lname,libentry);
 }
 /* lookup an existing type */
@@ -1543,7 +1550,7 @@ static void callback_callback(ffi_cif *fficif, void *ret, void **args, void *use
   Tcl_Obj **objv, *obj, *list;
   char buff[128];
   int i, status;
-  long ltmp;
+  long long ltmp;
   double dtmp;
 #if HAVE_INT64
   Tcl_WideIntOrLong wtmp;
@@ -1613,7 +1620,7 @@ static void callback_callback(ffi_cif *fficif, void *ret, void **args, void *use
       Tcl_ListObjAppendElement(interp, list, Tcl_NewByteArrayObj((unsigned char *)argp, cif->atypes[i]->size));
       continue;
     case FFIDL_PTR:
-      Tcl_ListObjAppendElement(interp, list, Tcl_NewLongObj((long)(*(void **)argp)));
+      Tcl_ListObjAppendElement(interp, list, Tcl_NewWideIntOrLong((long long)(*(void **)argp)));
       continue;
     case FFIDL_PTR_OBJ:
       Tcl_ListObjAppendElement(interp, list, *(Tcl_Obj **)argp);
@@ -1651,11 +1658,11 @@ static void callback_callback(ffi_cif *fficif, void *ret, void **args, void *use
       }
       ltmp = (long)dtmp;
       if (dtmp != ltmp)
-	if (Tcl_GetLongFromObj(interp, obj, &ltmp) == TCL_ERROR) {
+	if (Tcl_GetWideIntOrLongFromObj(interp, obj, &ltmp) == TCL_ERROR) {
 	  Tcl_AppendResult(interp, ", converting callback return value", NULL);
 	  goto escape;
 	}
-    } else if (Tcl_GetLongFromObj(interp, obj, &ltmp) == TCL_ERROR) {
+    } else if (Tcl_GetWideIntOrLongFromObj(interp, obj, &ltmp) == TCL_ERROR) {
       Tcl_AppendResult(interp, ", converting callback return value", NULL);
       goto escape;
     }
@@ -1679,7 +1686,7 @@ static void callback_callback(ffi_cif *fficif, void *ret, void **args, void *use
 #endif
   } else if (cif->rtype->class & FFIDL_GETDOUBLE) {
     if (obj->typePtr == ffidl_int_ObjType) {
-      if (Tcl_GetLongFromObj(interp, obj, &ltmp) == TCL_ERROR) {
+      if (Tcl_GetWideIntOrLongFromObj(interp, obj, &ltmp) == TCL_ERROR) {
 	Tcl_AppendResult(interp, ", converting callback return value", NULL);
 	goto escape;
       }
@@ -1707,7 +1714,7 @@ static void callback_callback(ffi_cif *fficif, void *ret, void **args, void *use
       goto escape;
     }
   }
-  
+
   /* convert return value */
   switch (cif->rtype->typecode) {
   case FFIDL_VOID:	break;
@@ -1950,7 +1957,7 @@ static void callback_callback(void *user_data, va_alist alist)
       goto escape;
     }
   }
-  
+
   /* convert return value */
   switch (cif->rtype->typecode) {
   case FFIDL_VOID:	va_return_void(alist); break;
@@ -1967,7 +1974,7 @@ static void callback_callback(void *user_data, va_alist alist)
   case FFIDL_UINT64:	va_return_uint64(alist, wtmp); break;
   case FFIDL_SINT64:	va_return_sint64(alist, wtmp); break;
 #endif
-  case FFIDL_STRUCT:	
+  case FFIDL_STRUCT:
     {
       int len;
       void *bytes = Tcl_GetByteArrayFromObj(obj, &len);
@@ -2254,7 +2261,7 @@ static int tcl_ffidl_info(ClientData clientData, Tcl_Interp *interp, int objc, T
       Tcl_WrongNumArgs(interp,2,objv,"");
       return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)interp));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntOrLong((long long)interp));
     return TCL_OK;
   case INFO_USE_FFCALL:
 #if USE_FFCALL
@@ -2309,7 +2316,7 @@ static int tcl_ffidl_info(ClientData clientData, Tcl_Interp *interp, int objc, T
     Tcl_SetObjResult(interp, Tcl_NewStringObj(CANONICAL_HOST,-1));
     return TCL_OK;
   }
-  
+
   /* return an error */
   Tcl_AppendResult(interp, "missing option implementation: ", Tcl_GetString(objv[1]), NULL);
   return TCL_ERROR;
@@ -2397,7 +2404,7 @@ static int tcl_ffidl_call(ClientData clientData, Tcl_Interp *interp, int objc, T
   ffidl_callout *callout = (ffidl_callout *)clientData;
   ffidl_cif *cif = callout->cif;
   int i, itmp;
-  long ltmp;
+  long long ltmp;
   double dtmp;
 #if HAVE_INT64
   Tcl_WideIntOrLong wtmp;
@@ -2420,9 +2427,9 @@ static int tcl_ffidl_call(ClientData clientData, Tcl_Interp *interp, int objc, T
 	  goto cleanup;
 	ltmp = (long)dtmp;
 	if (dtmp != ltmp)
-	  if (Tcl_GetLongFromObj(interp, obj, &ltmp) == TCL_ERROR)
+	  if (Tcl_GetWideIntOrLongFromObj(interp, obj, &ltmp) == TCL_ERROR)
 	    goto cleanup;
-      } else if (Tcl_GetLongFromObj(interp, obj, &ltmp) == TCL_ERROR)
+      } else if (Tcl_GetWideIntOrLongFromObj(interp, obj, &ltmp) == TCL_ERROR)
 	goto cleanup;
 #if HAVE_INT64
     } else if (cif->atypes[i]->class & FFIDL_GETWIDEINT) {
@@ -2438,7 +2445,7 @@ static int tcl_ffidl_call(ClientData clientData, Tcl_Interp *interp, int objc, T
 #endif
     } else if (cif->atypes[i]->class & FFIDL_GETDOUBLE) {
       if (obj->typePtr == ffidl_int_ObjType) {
-	if (Tcl_GetLongFromObj(interp, obj, &ltmp) == TCL_ERROR)
+	if (Tcl_GetWideIntOrLongFromObj(interp, obj, &ltmp) == TCL_ERROR)
 	  goto cleanup;
 	dtmp = (double)ltmp;
 	if (dtmp != ltmp)
@@ -2621,7 +2628,7 @@ static int tcl_ffidl_call(ClientData clientData, Tcl_Interp *interp, int objc, T
   case FFIDL_SINT64:	Tcl_SetObjResult(interp, Tcl_NewWideIntOrLong((Tcl_WideIntOrLong)cif->rvalue.v_sint64)); break;
 #endif
   case FFIDL_STRUCT:	Tcl_SetObjResult(interp, obj); Tcl_DecrRefCount(obj); break;
-  case FFIDL_PTR:	Tcl_SetObjResult(interp, Tcl_NewLongObj((long)cif->rvalue.v_pointer)); break;
+  case FFIDL_PTR:	Tcl_SetObjResult(interp, Tcl_NewWideIntOrLong((long long)cif->rvalue.v_pointer)); break;
   case FFIDL_PTR_OBJ:	Tcl_SetObjResult(interp, (Tcl_Obj *)cif->rvalue.v_pointer); break;
   case FFIDL_PTR_UTF8:	Tcl_SetObjResult(interp, Tcl_NewStringObj(cif->rvalue.v_pointer, -1)); break;
   case FFIDL_PTR_UTF16:	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(cif->rvalue.v_pointer, -1)); break;
@@ -2630,7 +2637,7 @@ static int tcl_ffidl_call(ClientData clientData, Tcl_Interp *interp, int objc, T
     Tcl_AppendResult(interp, buff, NULL);
     goto cleanup;
     return TCL_ERROR;
-  }    
+  }
   /* done */
   return TCL_OK;
   /* blew it */
@@ -2644,7 +2651,7 @@ static int tcl_ffidl_callout(ClientData clientData, Tcl_Interp *interp, int objc
   char *name;
   void (*fn)();
   int argc, i;
-  long tmp;
+  long long tmp;
   Tcl_Obj **argv;
   Tcl_DString usage, ds;
   Tcl_Command res;
@@ -2672,7 +2679,7 @@ static int tcl_ffidl_callout(ClientData clientData, Tcl_Interp *interp, int objc
   /* fetch cif */
   if (cif_parse(interp, client, objv[2], objv[3], objc==5 ? NULL : objv[5], &cif, 0) == TCL_ERROR) return TCL_ERROR;
   /* fetch function pointer */
-  if (Tcl_GetLongFromObj(interp, objv[4], &tmp) == TCL_ERROR) return TCL_ERROR;
+  if (Tcl_GetWideIntOrLongFromObj(interp, objv[4], &tmp) == TCL_ERROR) return TCL_ERROR;
   fn = (void (*)())tmp;
   /* if callout is already defined, redefine it */
   if ((callout = callout_lookup(client, name))) {
@@ -2843,9 +2850,9 @@ static int tcl_ffidl_symbol(ClientData clientData, Tcl_Interp *interp, int objc,
   address = Tcl_FindSymbol(interp, (Tcl_LoadHandle)handle, native);
   error = address ? NULL : "Tcl_FindSymbol() failed";
 #else
-  address = ffidlsym(handle, native, &error);	
+  address = ffidlsym(handle, native, &error);
   if (error) {
-  /* 
+  /*
    * Some platforms still add an underscore to the beginning of symbol
    * names.  If we can't find a name without an underscore, try again
    * with the underscore.
@@ -2864,16 +2871,16 @@ static int tcl_ffidl_symbol(ClientData clientData, Tcl_Interp *interp, int objc,
     return TCL_ERROR;
   }
 
-  Tcl_SetObjResult(interp, Tcl_NewLongObj((long)address));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntOrLong((long long)address));
   return TCL_OK;
 }
 /* usage: ffidl-stubsymbol library stubstable symbolnumber -> address */
 static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-  int library, stubstable, symbolnumber; 
+  int library, stubstable, symbolnumber;
   void **stubs = NULL, *address;
   static const char *library_names[] = {
-    "tcl", 
+    "tcl",
 #ifdef LOOKUP_TK_STUBS
     "tk",
 #endif
@@ -2924,7 +2931,7 @@ static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int o
   }
 
   if (!stubs) {
-    Tcl_AppendResult(interp, "no stubs table \"", Tcl_GetString(objv[2]), 
+    Tcl_AppendResult(interp, "no stubs table \"", Tcl_GetString(objv[2]),
         "\" in library \"", Tcl_GetString(objv[1]), "\"", NULL);
     return TCL_ERROR;
   }
@@ -2935,7 +2942,7 @@ static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int o
     return TCL_ERROR;
   }
 
-  Tcl_SetObjResult(interp, Tcl_NewLongObj((long)address));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntOrLong((long long)address));
   return TCL_OK;
 }
 
@@ -3011,10 +3018,7 @@ typedef struct MyTkStubs {
 
 /* private copy of Tk_InitStubs to avoid having to depend on Tk at build time */
 static const char *
-MyTkInitStubs(interp, version, exact)
-    Tcl_Interp *interp;
-    char *version;
-    int exact;
+MyTkInitStubs(Tcl_Interp* interp, char* version, int exact)
 {
     const char *actualVersion;
 
@@ -3030,12 +3034,12 @@ MyTkInitStubs(interp, version, exact)
 		TCL_STATIC);
 	return NULL;
     }
-    
+
     tkPlatStubsPtr =    ((MyTkStubs*)tkStubsPtr)->hooks->tkPlatStubs;
     tkIntStubsPtr =     ((MyTkStubs*)tkStubsPtr)->hooks->tkIntStubs;
     tkIntPlatStubsPtr = ((MyTkStubs*)tkStubsPtr)->hooks->tkIntPlatStubs;
     tkIntXlibStubsPtr = ((MyTkStubs*)tkStubsPtr)->hooks->tkIntXlibStubs;
-    
+
     return actualVersion;
 }
 #endif
