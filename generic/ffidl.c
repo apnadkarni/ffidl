@@ -87,12 +87,6 @@ static const char *MyTkInitStubs(Tcl_Interp *, char *, int);
 
 #if defined USE_LIBFFI
 
-/* If building with MSVC, include the ffidlConfig.h directly */
-#if defined _MSC_VER
-#include <ffidlConfig.h>
-#endif
-
-
 /* workaround for ffi.h bug on certain platforms: */
 #include <stddef.h>
 #include <limits.h>
@@ -113,6 +107,11 @@ static const char *MyTkInitStubs(Tcl_Interp *, char *, int);
  * libffi-1.20 doesn't define the latter, so we default it.
  */
 #include <ffi.h>
+
+/* If building with MSVC, include the ffidlConfig.h directly */
+#if defined _MSC_VER
+#include <ffidlConfig.h>
+#endif
 
 #ifndef FFI_CLOSURES
 #define HAVE_CLOSURES 0
@@ -378,6 +377,7 @@ static void ffidlclose(void *handle, const char **error)
  * Functions exported from this file.
  */
 EXTERN void *   ffidl_pointer_pun _ANSI_ARGS_((void *p));
+EXTERN void *   ffidl_pointer_depun _ANSI_ARGS_((void *p));
 EXTERN int	Ffidl_Init _ANSI_ARGS_((Tcl_Interp * interp));
 
 /*****************************************
@@ -2950,6 +2950,11 @@ static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int o
  * One function exported for pointer punning with ffidl-callout.
  */
 void *ffidl_pointer_pun(void *p) { return p; }
+
+/*
+ * and one for derefencing pointers
+ */
+void* ffidl_pointer_depun(void **p) { return *p; }
 
 /*
  *--------------------------------------------------------------

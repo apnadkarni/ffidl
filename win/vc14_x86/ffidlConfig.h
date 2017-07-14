@@ -274,3 +274,17 @@
 #ifndef __CHAR_UNSIGNED__
 /* # undef __CHAR_UNSIGNED__ */
 #endif
+
+/*
+ * Native RAW API is defined for x86 builds by libffi (ffitarget.h), but it 
+ * does obviously not work with out arguments. Undefine it here so that we can
+ * define callouts like this:
+ * 
+ * ffidl::callout fn {pointer-var} void [ffidl::symbol mydll.dll myfcn_with_out_arg]
+ * # ...
+ * set arg [binary format x[get sizeof out arg]]
+ * fn arg
+ * binary scan $arg (type...) argValue
+ * # ... do something with argValue
+ */
+#undef FFI_NATIVE_RAW_API
