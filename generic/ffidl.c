@@ -377,7 +377,7 @@ static void ffidlclose(void *handle, const char **error)
  * Functions exported from this file.
  */
 EXTERN void *   ffidl_pointer_pun _ANSI_ARGS_((void *p));
-EXTERN void *   ffidl_pointer_depun _ANSI_ARGS_((void *p));
+EXTERN void *   ffidl_pointer_depun _ANSI_ARGS_((void **p));
 EXTERN int	Ffidl_Init _ANSI_ARGS_((Tcl_Interp * interp));
 
 /*****************************************
