@@ -63,7 +63,7 @@
       <AdditionalDependencies>tclstub86.lib;libffi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>cp $(TargetPath) $(SolutionDir)..\..\</Command>
+      <Command>cp $(TargetPath) $(SolutionDir)..\..\lib$(ProjectName)0.7-win32$(TargetExt)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -85,7 +85,7 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>cp $(TargetPath) $(SolutionDir)..\..\</Command>
+      <Command>cp $(TargetPath) $(SolutionDir)..\..\lib$(ProjectName)0.7-win32$(TargetExt)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
