@@ -377,7 +377,7 @@ static void ffidlclose(void *handle, const char **error)
  * Functions exported from this file.
  */
 EXTERN void *   ffidl_pointer_pun _ANSI_ARGS_((void *p));
-EXTERN void *   ffidl_pointer_depun _ANSI_ARGS_((void **p));
+EXTERN void *   ffidl_pointer_deref _ANSI_ARGS_((void **p));
 EXTERN int	Ffidl_Init _ANSI_ARGS_((Tcl_Interp * interp));
 
 /*****************************************
@@ -2952,9 +2952,11 @@ static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int o
 void *ffidl_pointer_pun(void *p) { return p; }
 
 /*
- * and one for derefencing pointers
+ * One function for derefencing pointers. This is necessary i.e. for out 
+ * arguments, when the argument is actually an address to memory, where 
+ * the result will be stored.
  */
-void* ffidl_pointer_depun(void **p) { return *p; }
+void* ffidl_pointer_deref(void **p) { return *p; }
 
 /*
  *--------------------------------------------------------------

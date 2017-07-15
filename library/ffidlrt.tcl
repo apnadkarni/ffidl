@@ -316,5 +316,5 @@ proc ::ffidl::pointer-into-bytearray {pointer length} {
 # dereference a void pointer from void** to void*
 # this is needed if the void* is an out argument to a function
 #
-ffidl::callout ::ffidl::ref {pointer-byte} pointer [::ffidl::symbol [::ffidl::find-lib ffidl] ffidl_pointer_depun]
+ffidl::callout ::ffidl::deref {pointer-byte} pointer [::ffidl::symbol [::ffidl::find-lib ffidl] ffidl_pointer_deref]
 
