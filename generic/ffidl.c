@@ -2952,11 +2952,16 @@ static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int o
 void *ffidl_pointer_pun(void *p) { return p; }
 
 /*
- * One function for derefencing pointers. This is necessary i.e. for out 
- * arguments, when the argument is actually an address to memory, where 
+ * One function for derefencing pointers. This is necessary i.e. for out
+ * arguments, when the argument is actually an address to memory, where
  * the result will be stored.
  */
-void* ffidl_pointer_deref(void **p) { return *p; }
+void* ffidl_pointer_deref(void **p) {
+    if (p == NULL) {
+        return NULL;
+    }
+    return *p;
+}
 
 /*
  *--------------------------------------------------------------
