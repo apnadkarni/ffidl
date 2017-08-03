@@ -287,6 +287,24 @@ proc ::ffidl::get-bytearray {obj} {
 ::ffidl::callout ::ffidl::free {pointer} void [::ffidl::symbol [::ffidl::find-lib c] free]
 
 #
+# access standard allocators for aligned memory. 
+# this is different on windows and C11 aware posix platforms. Windows calls it _aligned_malloc and 
+# swaps the arguments. A helper procedure shall pull things in order. Besides that, Windows has a
+# different function for free'ing aligned memory, called _aligned_free. An alias for posix C11 aware
+# platforms helps that both behave the same, but aligned_alloc memory must be freed with aligned_free
+#
+if {$::tcl_platform(platform) eq "windows"} {
+    ::ffidl::callout ::ffidl::_aligned_malloc {size_t size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] _aligned_malloc]
+    ::ffidl::callout ::ffidl::aligned_free {pointer} void [::ffidl::symbol [::ffidl::find-lib c] _aligned_free]
+    proc ::ffidl::aligned_alloc {alignment size} {
+        _aligned_malloc $size $alignment
+    }
+} else {
+    ::ffidl::callout ::ffidl::aligned_alloc {size_t size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] aligned_alloc]
+    interp alias {} ::ffidl::aligned_free {} ::ffidl::free
+}
+
+#
 # Copy some memory at some location into a Tcl bytearray.
 #
 # Needless to say, this can be very hazardous to your
