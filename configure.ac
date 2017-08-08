@@ -185,7 +185,7 @@ AC_ARG_ENABLE(test,
 AC_MSG_RESULT([$tcl_ok])
 if test "$tcl_ok" = "yes"; then
     TEA_ADD_SOURCES([ffidl_test.c])
-    TEA_ADD_LIBS([-lgcc])
+    #TEA_ADD_LIBS([-lgcc])
     FFIDL_TEST=1
 fi
 AC_SUBST(FFIDL_TEST)

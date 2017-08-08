@@ -353,7 +353,7 @@ fflibs   := libffi ffcall
 $(fflibs): %: %/Makefile
 	$(MAKE) $(fflib_make_args) -C $* 
 $(fflibs:%=%/Makefile): %/Makefile:
-	mkdir -p $* && cd $* && \
+	mkdir -p $* && cd $* && ./autogen.sh && \
 	`cd .. && cd $(srcdir) && pwd`/$*/configure \
 	    --disable-shared --with-pic --disable-builddir
 ffcall: fflib_make_args=-j1
