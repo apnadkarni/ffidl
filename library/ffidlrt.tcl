@@ -300,8 +300,11 @@ if {$::tcl_platform(platform) eq "windows"} {
         _aligned_malloc $size $alignment
     }
 } else {
-    ::ffidl::callout ::ffidl::aligned_alloc {size_t size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] aligned_alloc]
-    interp alias {} ::ffidl::aligned_free {} ::ffidl::free
+    if {$::tcl_platform(os) ne "Darwin"} {
+        # macOS doesn't have this yet
+        ::ffidl::callout ::ffidl::aligned_alloc {size_t size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] aligned_alloc]
+        interp alias {} ::ffidl::aligned_free {} ::ffidl::free
+    }
 }
 
 #
