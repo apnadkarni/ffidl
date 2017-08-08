@@ -6003,7 +6003,6 @@ if test "$tcl_ok" = "yes"; then
 
 
 
-    #TEA_ADD_LIBS([-lgcc])
     FFIDL_TEST=1
 fi
 
