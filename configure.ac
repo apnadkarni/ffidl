@@ -237,20 +237,6 @@ TEA_ENABLE_SHARED
 
 TEA_CONFIG_CFLAGS
 
-if test "${TEA_PLATFORM}" != "windows" ; then
-    if test "${TCL_MAJOR_VERSION}" -gt 8 -o \
-        \( "${TCL_MAJOR_VERSION}" -gt 7 -a "${TCL_MINOR_VERSION}" -gt 5 \)
-    then
-        AC_DEFINE(USE_TCL_LOADFILE, 1, [Use Tcl_LoadFile() API to load code])
-        PKG_DL_OBJS=
-    else
-        AC_DEFINE(USE_TCL_DLOPEN, 1, [Use Tcl*Dlopen() API to load code])
-        TEA_ADD_LIBS([${DL_LIBS}])
-        PKG_DL_OBJS=${DL_OBJS}
-    fi
-fi
-AC_SUBST(PKG_DL_OBJS)
-
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols option.
 #--------------------------------------------------------------------
