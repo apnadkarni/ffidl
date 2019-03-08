@@ -16,6 +16,7 @@
 #
 
 PROJECT = Ffidl
+NEED_TCL_SOURCE = 1
 #MULTIPLATFORM_INSTALL = 1
 
 !include "rules-ext.vc"
